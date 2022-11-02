@@ -413,18 +413,35 @@ def compute_gradient_of_variables(output_tensor, out_grad):
     Store the computed result in the grad field of each Variable.
     """
     # a map from node to a list of gradient contributions from each output node
-    node_to_output_grads_list: Dict[Tensor, List[Tensor]] = {}
+    # node_to_output_grads_list: Dict[Tensor, List[Tensor]] = {}
     # Special note on initializing gradient of
     # We are really taking a derivative of the scalar reduce_sum(output_node)
     # instead of the vector output_node. But this is the common case for loss function.
-    node_to_output_grads_list[output_tensor] = [out_grad]
+    # node_to_output_grads_list[output_tensor] = [out_grad]
+    node_to_output_grads = {output_tensor: out_grad}
 
     # Traverse graph in reverse topological order given the output_node that we are taking gradient wrt.
     reverse_topo_order = list(reversed(find_topo_sort([output_tensor])))
 
-    ### BEGIN YOUR SOLUTION
-    raise NotImplementedError()
-    ### END YOUR SOLUTION
+    # for node in reverse_topo_order:
+    #     grads = node.op.gradient(node_to_output_grads_list[node][0], node)
+    #     for i, node_inp in enumerate(node.inputs):
+    #         if node_inp not in node_to_output_grads_list:
+    #             node_to_output_grads_list[node_inp] = []    
+    #         node_to_output_grads_list[node_inp].append(grads[i])
+
+    for node in reverse_topo_order:
+        if node.op is not None:
+            grads = node.op.gradient(node_to_output_grads[node], node)
+            for i, node_inp in enumerate(node.inputs):
+                if node_inp not in node_to_output_grads:
+                    node_to_output_grads[node_inp] = 0
+                node_to_output_grads[node_inp] = sum_node_list([grads[i], node_to_output_grads[node_inp]])
+
+    for node in node_to_output_grads:
+        if node.requires_grad:
+            node.grad = node_to_output_grads[node]
+            #grad = sum_node_list(node_to_output_grads_list[node])
 
 
 def find_topo_sort(node_list: List[Value]) -> List[Value]:
@@ -436,15 +453,24 @@ def find_topo_sort(node_list: List[Value]) -> List[Value]:
     sort.
     """
     ### BEGIN YOUR SOLUTION
-    raise NotImplementedError()
+    # raise NotImplementedError()
     ### END YOUR SOLUTION
+    #print(vars(node_list[0].inputs[0]))
+    visited = []
+    topo_order = []
+    for node in node_list:
+        topo_sort_dfs(node, visited, topo_order)
+    return topo_order
 
 
 def topo_sort_dfs(node, visited, topo_order):
     """Post-order DFS"""
-    ### BEGIN YOUR SOLUTION
-    raise NotImplementedError()
-    ### END YOUR SOLUTION
+    if node in visited:
+        return
+    visited.append(node)
+    for next_node in node.inputs:
+        topo_sort_dfs(next_node, visited, topo_order)
+    topo_order.append(node)
 
 
 ##############################
