@@ -1,4 +1,4 @@
-"""Operatpr table."""
+# """Operatpr table."""
 # Global operator table.
 from numbers import Number
 from typing import Optional, List
@@ -135,12 +135,9 @@ class PowerScalar(TensorOp):
         return a**self.scalar
 
     def gradient(self, out_grad, node):
-        return (self.scalar*out_grad**(self.scalar - 1), )
-
-
-def power_scalar(a, scalar):
-    return PowerScalar(scalar)(a)
-
+        lhs = node.inputs[0]
+        grad = out_grad * self.scalar * power_scalar(lhs, self.scalar - 1)
+        return [grad]
 
 def power_scalar(a, scalar):
     return PowerScalar(scalar)(a)
